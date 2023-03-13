@@ -71,22 +71,22 @@ for A = 1:5
         press = press + sum(sum(E.*E, "omitnan"),"omitnan");
     end
 %     press = sum(sse);
-    [~, ~, r2] = nipalspca(X,i);
-    q2(i) = 1 - (press/var_x);
-    fprintf('i = %d\n',A);
+    [~, ~, r2] = nipalspca(X,A);
+    q2(A) = 1 - (press/var_x);
+    fprintf('A = %d\n',A);
     fprintf('Q2 = %f\n', q2(A))
     fprintf('r2 = %f\n', r2);
     fprintf('\n');
-    if(i > 1)
+    if(A > 1)
       per_change = (q2(A) - q2(A-1)) / q2(A-1);
       if(per_change < 0.01)
-          A = A-1;
           break;
       end
     end
 end
+A = A-1;
 
-[t, p, r2, spe] = nipalspca(X_unshuffled,A);
+[t, p, ~, res_x] = nipalspca(X_unshuffled,A);
 
 figure
 bar(p(:,1:2))
@@ -99,56 +99,57 @@ title("Score Plot");
 t2_base = t./std(t);
 T2 = sum(t2_base.*t2_base,2);
 
-N = size(X,2);
+N = size(X_unshuffled,1);
+t2_95_perc = (((N-1)*(N+1)*A)/(N*(N-A)))*finv(0.95, A, N-A);
+t2_99_perc = (((N-1)*(N+1)*A)/(N*(N-A)))*finv(0.99, A, N-A);
+
+figure
+plot(T2, '-ok');
+yline(t2_95_perc,'--g', '95%');
+yline(t2_99_perc,'--r', '99%');
+title("T^2");
+
+spe = sum(res_x(:,:,A).*res_x(:,:,A),2);
+m_spe = mean(spe);
+v_spe = var(spe);
+spe_95_perc = (v_spe/(2*m_spe))*chi2inv(0.95, (2*m_spe^2)/v_spe);
+spe_99_perc = (v_spe/(2*m_spe))*chi2inv(0.99, (2*m_spe^2)/v_spe);
+
+figure
+plot(spe, '-ok');
+yline(spe_95_perc,'--g', '95%');
+yline(spe_99_perc,'--r', '99%');
+title("SPE");
+
+[outlier_rows] = find(T2 > t2_99_perc);
+for row = outlier_rows
+    X_unshuffled(row,:) = [];
+end
+
+[t, p, r2, res_x] = nipalspca(X_unshuffled,A);
+
+t2_base = t./std(t);
+T2 = sum(t2_base.*t2_base,2);
+
+N = size(X_unshuffled,1);
 
 t2_95_perc = (((N-1)*(N+1)*A)/(N*(N-A)))*finv(0.95, A, N-A);
 t2_99_perc = (((N-1)*(N+1)*A)/(N*(N-A)))*finv(0.99, A, N-A);
 
 figure
-plot(T2);
-yline(t2_95_perc,'--g', '95%');
-yline(t2_99_perc,'--r', '99%');
-title("T^2");
-
-m_spe = mean(spe);
-v_spe = var(spe);
-spe_95_perc = (v_spe/(2*m_spe))*chi2inv(0.95, (2*m_spe^2)/v_spe);
-spe_99_perc = (v_spe/(2*m_spe))*chi2inv(0.99, (2*m_spe^2)/v_spe);
-
-figure
-plot(spe);
-yline(spe_95_perc,'--g', '95%');
-yline(spe_99_perc,'--r', '99%');
-title("SPE");
-
-[outlier_rows] = find(T2 > 20);
-for row = outlier_rows
-    X_unshuffled(row,:) = [];
-end
-
-[t, p, r2, spe] = nipalspca(X_unshuffled,i);
-
-t2_base = t./std(t);
-T2 = sum(t2_base.*t2_base,2);
-
-N = size(X,2);
-
-t2_95_perc = (((N-1)*(N+1)*i)/(N*(N-i)))*finv(0.95, i, N-i);
-t2_99_perc = (((N-1)*(N+1)*i)/(N*(N-i)))*finv(0.99, i, N-i);
-
-figure
-plot(T2);
+plot(T2, '-ok');
 yline(t2_95_perc,'--g', '95%');
 yline(t2_99_perc,'--r', '99%');
 title("T^2 without outliers");
 
+spe = sum(res_x(:,:,A).*res_x(:,:,A),2);
 m_spe = mean(spe);
 v_spe = var(spe);
 spe_95_perc = (v_spe/(2*m_spe))*chi2inv(0.95, (2*m_spe^2)/v_spe);
 spe_99_perc = (v_spe/(2*m_spe))*chi2inv(0.99, (2*m_spe^2)/v_spe);
 
 figure
-plot(spe);
+plot(spe, '-ok');
 yline(spe_95_perc,'--g', '95%');
 yline(spe_99_perc,'--r', '99%');
 title("SPE without outliers");

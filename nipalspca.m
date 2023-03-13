@@ -1,4 +1,4 @@
-function [t, p, R2, spe] = nipalspca(x,A)
+function [t, p, R2, res_x] = nipalspca(x,A)
 
 xs = (x - mean(x))./std(x); % mean center and scale data
 x = xs;
@@ -37,7 +37,6 @@ for a =1:A
     
     R2(a) = 1 - sum(sum(x.*x, "omitnan"),"omitnan")./sum(sum(x0.*x0, "omitnan"),"omitnan"); % Find cummulative R2 for each component
 end
-spe = sum(x.*x, 2, "omitnan");
 
 
 end
