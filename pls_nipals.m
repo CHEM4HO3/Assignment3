@@ -1,4 +1,4 @@
-function [t, u, w_star, c, p, R2] = pls_nipals(X, Y, num_components)
+function [t, u, w, w_star, c, p, R2] = pls_nipals(X, Y, num_components)
 
 % center X and Y
 X = (X - mean(X))./std(X);
@@ -9,14 +9,15 @@ Y0 = Y;
 % initialize arrays
 t = zeros(size(X, 1), num_components);
 u = zeros(size(Y, 1), num_components);
-% w_star = zeros(size(X, 2), num_components);
+w_star = zeros(size(X, 2), num_components);
+w = zeros(size(X, 2), num_components);
 c = zeros(size(Y, 2), num_components);
 p = zeros(size(X, 2), num_components);
 R2 = zeros(1, num_components);
 
 for i = 1:num_components
     % initialize weight vector
-    u = Y(:, 2);
+    u = Y(:, 3);
     
     % repeat until convergence
     while true
@@ -29,10 +30,6 @@ for i = 1:num_components
         c_new = ((1\(t_new'*t_new))*(t_new'*Y))';
 
         u_new = (1\(c_new'*c_new))*(Y*c_new);
-        if isnan(norm(u_new - u)/norm(u))
-            i
-            1 + 1
-        end
         % check for convergence
         if norm(u_new - u)/norm(u)  < 1e-6
             break;
@@ -49,6 +46,7 @@ for i = 1:num_components
     t(:, i) = t_new;
     u(:, i) = u_new;
     c(:, i) = c_new;
+    w(:,i) = w_new;
     w_star = w_new*(1\(p_new'*w_new));
     p(:, i) = p_new ./ norm(p_new);
 
